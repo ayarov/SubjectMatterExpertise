@@ -24,8 +24,8 @@ MergeFeatures
 5. edit_period_q1 - edit_period_q4 - DONE
 6. mean_edit_frequency - DONE
 7. median_edit_frequency - DONE
-8. median_edit_size
-9. mean_edit_size
+8. median_edit_size - DONE
+9. mean_edit_size - DONE
 10. tenure
 11. gender
 12. ns0_edits_ratio - ns15_edits_ratio

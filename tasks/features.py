@@ -100,6 +100,42 @@ class CalculateTalkPageTotalEdits(luigi.Task):
 
 
 # region Features
+class FeatureTask(luigi.Task):
+    format = 'h5'
+    file_name = 'feature.h5'
+    data_dir = luigi.Parameter(default=r'D:\data\sme')
+
+    def get_file_name(self):
+        return self.file_name
+
+    def get_data_dir(self):
+        return self.data_dir
+
+    def get_format(self):
+        return self.format
+
+    def output(self):
+        return luigi.LocalTarget(path=os.path.join(self.get_data_dir(), self.get_file_name()), format=self.get_format())
+
+    def requires(self):
+        return self.on_requires()
+
+    def on_requires(self):
+        return []
+
+    def on_read_input(self):
+        return [pd.read_hdf(input_target.path, mode='r') for input_target in self.input()]
+
+    def on_process(self, data_frames):
+        return data_frames[0]
+
+    def on_save(self, df):
+        df.to_hdf(os.path.join(self.get_data_dir(), self.get_file_name()), key='df', mode='w')
+
+    def run(self):
+        self.on_save(self.on_process(self.on_read_input()))
+
+
 class UserPageEditsFeature(luigi.Task):
     file_name = 'user_page_edits.h5'
     data_dir = luigi.Parameter(default=r'D:\data\sme')
@@ -357,6 +393,32 @@ class EditFrequencyFeature(luigi.Task):
 
             df = pd.DataFrame(data=data, columns=columns)
             df.to_hdf(os.path.join(self.data_dir, self.file_name), key='df', mode='w')
+
+
+class EditSizeFeature(FeatureTask):
+
+    def get_file_name(self):
+        return 'edit_size.h5'
+
+    def on_requires(self):
+        return [CollectRevisions(data_dir=self.data_dir)]
+
+    def on_process(self, data_frames):
+        revs_df = data_frames[0]
+        if isinstance(revs_df, pd.DataFrame):
+            data = []
+            columns = ['user_id', 'user_name', 'page_id', 'mean_edit_size', 'median_edit_size']
+            registered = revs_df[revs_df['user_id'] != 0]
+            for (page_id, user_id, user_name), group in registered.groupby(by=['page_id', 'user_id', 'user_name']):
+                logging.debug('Page ID: {}\tUser ID: {}\tUser Name: {}'.format(page_id, user_id, user_name))
+                data.append([page_id, user_id, user_name, np.mean(group['size']), np.median(group['size'])])
+
+            unregistered = revs_df[revs_df['user_id'] == 0]
+            for (page_id, user_name), group in unregistered.groupby(by=['page_id', 'user_name']):
+                logging.debug('Page ID: {}\tUser Name: {}'.format(page_id, user_name))
+                data.append([page_id, 0, user_name, np.mean(group['size']), np.median(group['size'])])
+
+            return pd.DataFrame(data=data, columns=columns)
 # endregion
 
 
@@ -376,7 +438,8 @@ class MergeFeatures(luigi.Task):
                 UserTalkPageEditsFeature(data_dir=self.data_dir),
                 UserTalkPageEditsRatioFeature(data_dir=self.data_dir),
                 EditPeriodsFeature(data_dir=self.data_dir),
-                EditFrequencyFeature(data_dir=self.data_dir)]
+                EditFrequencyFeature(data_dir=self.data_dir),
+                EditSizeFeature(data_dir=self.data_dir)]
 
     def run(self):
         logging.info('Merging features...')
