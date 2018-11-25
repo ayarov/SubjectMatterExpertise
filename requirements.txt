@@ -1,5 +1,8 @@
 luigi
+numpy
 pandas
 h5py
 pymongo
+python-dateutil
+wikitools
 C:\Users\AlexY\PycharmProjects\LuigiDemo\resources\tables-3.4.4-cp27-cp27m-win32.whl
