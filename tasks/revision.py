@@ -1,9 +1,9 @@
 import os
-import csv
 import luigi
 import pymongo
 import pandas as pd
 from wikitools import wiki, api
+from utils.bot_utils import is_bot
 from utils.num_utils import parse_int
 from utils.str_utils import parse_string
 from utils.date_utils import parse_timestamp
@@ -32,6 +32,7 @@ class CollectRevisions(luigi.Task):
                 data = []
                 columns = ['page_id', 'revision_id', 'user_id', 'user_name', 'size', 'timestamp']
                 for page_id in page_ids:
+                    page_id = parse_int(page_id)
                     result = revs_collection.find_one({'_id': page_id})
                     if 'revs' in result and result['_id'] == page_id:
                         for rev in result['revs']:
@@ -50,7 +51,6 @@ class CollectRevisions(luigi.Task):
 class CollectTalkRevisions(luigi.Task):
     file_name = 'talk_revisions.h5'
     data_dir = luigi.Parameter(default=r'D:\data\sme')
-    site = wiki.Wiki("https://en.wikipedia.org/w/api.php")
 
     def output(self):
         return luigi.LocalTarget(path=os.path.join(self.data_dir, self.file_name))
@@ -59,6 +59,7 @@ class CollectTalkRevisions(luigi.Task):
         return [CollectTalkPages(data_dir=self.data_dir)]
 
     def run(self):
+        site = wiki.Wiki("https://en.wikipedia.org/w/api.php")
         df = None
         bot_users = self.load_bots()
         pages_df = pd.read_hdf(self.input()[0].path, mode='r')
@@ -69,7 +70,7 @@ class CollectTalkRevisions(luigi.Task):
 
                 print('Page ID: {}\tTalk Page ID: {}'.format(page_id, talk_page_id))
 
-                talk_revs_df = self.get_revisions(page_id=page_id, talk_page_id=talk_page_id, bots=bot_users)
+                talk_revs_df = self.get_revisions(site=site, page_id=page_id, talk_page_id=talk_page_id, bots=bot_users)
                 if df is None:
                     df = talk_revs_df
                 else:
@@ -77,24 +78,14 @@ class CollectTalkRevisions(luigi.Task):
 
             df.to_hdf(os.path.join(self.data_dir, self.file_name), key='df', mode='w')
 
-    @staticmethod
-    def load_bots():
-        bots = {}
-        with open(os.path.join('resources', 'bots.csv'), 'rb') as csv_file:
-            bot_reader = csv.reader(csv_file, delimiter=',', quotechar='|')
-            for row in bot_reader:
-                bots[row[1]] = True
-            csv_file.close()
-        return bots
-
-    def get_revisions(self, page_id, talk_page_id, bots):
+    def get_revisions(self, site, page_id, talk_page_id, bots):
         data = []
         limit = 50000
         rv_continue = None
         total_revisions = 0
 
         while True:
-            json_data = self.__get_revisions(talk_page_id, rv_continue)
+            json_data = self.__get_revisions(site, talk_page_id, rv_continue)
             pages = json_data['query']['pages']
             cont_dictionary = json_data.get('continue')
 
@@ -118,7 +109,7 @@ class CollectTalkRevisions(luigi.Task):
                     if 'timestamp' in rev:
                         timestamp = parse_timestamp(rev['timestamp'])
 
-                    if user_name in bots or user_name.lower().startswith('bot') or user_name.lower().endswith('bot'):
+                    if is_bot(user_name):
                         continue
 
                     data.append([page_id, talk_page_id, rev_id, user_id, user_name, size, timestamp])
@@ -136,7 +127,7 @@ class CollectTalkRevisions(luigi.Task):
                                                 'size',
                                                 'timestamp'])
 
-    def __get_revisions(self, page_id, rv_continue=None):
+    def __get_revisions(self, site, page_id, rv_continue=None):
         params = \
             {
                 'action': 'query',
@@ -150,5 +141,5 @@ class CollectTalkRevisions(luigi.Task):
         if rv_continue:
             params['rvcontinue'] = rv_continue
 
-        return api.APIRequest(self.site, params).query(querycontinue=False)
+        return api.APIRequest(site, params).query(querycontinue=False)
 

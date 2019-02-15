@@ -26,12 +26,12 @@ MergeFeatures
 7. median_edit_frequency - DONE
 8. median_edit_size - DONE
 9. mean_edit_size - DONE
-10. tenure
-11. gender
+10. tenure - DONE
+11. gender - 
 12. ns0_edits_ratio - ns15_edits_ratio
 13. page_edits_entropy
 14. page_edits_total
-15. edit_type_a - edit_type_m
+15. edit_type_a - edit_type_m - DONE
 16. links_overlap
 17. categories_overlap
 18. title_similarity
@@ -44,3 +44,9 @@ MergeFeatures
 
 **TODO**
 Exclude "Conversion Script" user
+Aggregate users' contribution history:
+- Namespace
+- Article ID
+- Article Title
+- Links
+- Categories

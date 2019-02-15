@@ -1,0 +1,5 @@
+[
+    { "$match": { "user_name": @user_name } },
+    { "$group": { "_id": null, "total_edits": { "$sum": 1 } } },
+    { "$project": { "_id": 0 } }
+]
