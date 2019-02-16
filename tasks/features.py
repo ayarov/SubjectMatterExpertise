@@ -445,8 +445,13 @@ class TenureFeature(FeatureTask):
                     logging.debug('Username: {}\tTenure: {}'.format(user_name, tenure))
 
         tenure_df = pd.DataFrame(data=data, columns=columns)
-        df = revs_df.merge(tenure_df, how='left', on='user_name')
-        return df[['page_id', 'user_name', 'tenure']]
+        data = []
+        cols = ['page_id', 'user_name', 'tenure']
+        df = revs_df.merge(tenure_df, how='left', on='user_name')[cols]
+        for (page_id, user_name), group in df.groupby(by=['page_id', 'user_name']):
+            data.append([page_id, user_name, group.iloc[0]['tenure']])
+
+        return pd.DataFrame(data=data, columns=cols)
 
 
 class EditTypesFeature(FeatureTask):
@@ -486,9 +491,67 @@ class EditTypesFeature(FeatureTask):
         return pd.DataFrame(data=data, columns=['page_id', 'user_name'] + edit_type_columns)
 
 
+class NameSpacesFeature(FeatureTask):
+    def cache_name(self):
+        return 'name_spaces'
 
+    def on_requires(self):
+        return [CollectRevisions(data_dir=self.data_dir)]
 
+    @staticmethod
+    def aggregate(collection, user_name):
+        agg_result = collection.aggregate([
+                     {'$match': {'user_name': user_name}},
+                     {'$group': {'_id': "$page_ns",
+                                 'count': {'$sum': 1}}},
+                     {'$sort': {'count': -1}}
+                   ])
 
+        namespaces = np.zeros(16)
+
+        if agg_result is not None:
+            for dic in agg_result:
+                ns = dic['_id']
+                count = dic['count']
+                if ns < len(namespaces):
+                    namespaces[ns] = count
+
+        ns_total_count = np.sum(namespaces)
+        ns_edit_dist = [float(ns) / ns_total_count for ns in namespaces] if ns_total_count > 0 else list(np.zeros(16))
+
+        return ns_edit_dist
+
+    def on_process(self, data_frames):
+        revs_df = data_frames[0]
+
+        data = []
+        ns_columns = ['ns{}_edit_dist'.format(ns) for ns in range(0, 16, 1)]
+        columns = ['user_name'] + ns_columns
+        if isinstance(revs_df, pd.DataFrame):
+            user_names = revs_df['user_name'].unique()
+
+            with pymongo.MongoClient(host=config.get('MONGO', 'host'),
+                                     port=config.get_int('MONGO', 'port')) as client:
+                db = client.get_database(config.get('MONGO', 'database'))
+                collection = db.get_collection(config.get('MONGO', 'collection'))
+
+                for user_name in user_names:
+                    if is_bot(user_name):
+                        continue
+
+                    namespaces = self.aggregate(collection=collection, user_name=user_name)
+                    data.append([user_name] + namespaces)
+                    logging.debug('Username: {}\tNamespaces: {}'.format(user_name, namespaces))
+
+        ns_df = pd.DataFrame(data=data, columns=columns)
+        data = []
+        cols = ['page_id', 'user_name'] + ns_columns
+        df = revs_df.merge(ns_df, how='left', on='user_name')[cols]
+
+        for (page_id, user_name), group in df.groupby(by=['page_id', 'user_name']):
+            data.append([page_id, user_name] + list(group.iloc[0][ns_columns]))
+
+        return pd.DataFrame(data=data, columns=cols)
 
 # endregion
 
@@ -498,13 +561,7 @@ class MergeFeatures(FeatureTask):
         return 'features'
 
     def on_requires(self):
-        return [
-                # CollectTalkPages(data_dir=self.data_dir),
-                # CollectTalkRevisions(data_dir=self.data_dir),
-                # CollectEditTypes2012(data_dir=self.data_dir),
-                # CollectEditTypes2018(data_dir=self.data_dir),
-
-                UserPageEditsFeature(data_dir=self.data_dir),
+        return [UserPageEditsFeature(data_dir=self.data_dir),
                 UserPageEditsRatioFeature(data_dir=self.data_dir),
                 UserTalkPageEditsFeature(data_dir=self.data_dir),
                 UserTalkPageEditsRatioFeature(data_dir=self.data_dir),
@@ -512,27 +569,17 @@ class MergeFeatures(FeatureTask):
                 EditFrequencyFeature(data_dir=self.data_dir),
                 EditSizeFeature(data_dir=self.data_dir),
                 EditTypesFeature(data_dir=self.data_dir),
-                TenureFeature(data_dir=self.data_dir)
-                ]
+                TenureFeature(data_dir=self.data_dir),
+                NameSpacesFeature(data_dir=self.data_dir)]
+
+    @staticmethod
+    def merge(x, y):
+        df = pd.merge(x, y, on=['page_id', 'user_name'], how='left')
+        logging.info('Merge: {} + {} = {}'.format(x.shape, y.shape, df.shape))
+        return df
 
     def on_process(self, data_frames):
         logging.info('Merging features...')
-        df = reduce(lambda x, y: pd.merge(x, y, on=['page_id', 'user_name'], how='left'), data_frames)
+        df = reduce(lambda x, y: self.merge(x, y), data_frames)
+        logging.info('Features shape: {}'.format(df.shape))
         return df
-
-    # def requires(self):
-    #     return [CollectEditTypes2012(data_dir=self.data_dir),
-    #             CollectEditTypes2018(data_dir=self.data_dir),
-    #             # Features
-    #             UserPageEditsFeature(data_dir=self.data_dir),
-    #             UserPageEditsRatioFeature(data_dir=self.data_dir),
-    #             UserTalkPageEditsFeature(data_dir=self.data_dir),
-    #             UserTalkPageEditsRatioFeature(data_dir=self.data_dir),
-    #             EditPeriodsFeature(data_dir=self.data_dir),
-    #             EditFrequencyFeature(data_dir=self.data_dir),
-    #             EditSizeFeature(data_dir=self.data_dir),
-    #             CalculateUserEdits(data_dir=self.data_dir)]
-    #             # TenureFeature(data_dir=self.data_dir)]
-
-    # def run(self):
-    #     logging.info('Merging features...')

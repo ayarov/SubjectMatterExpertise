@@ -28,7 +28,7 @@ MergeFeatures
 9. mean_edit_size - DONE
 10. tenure - DONE
 11. gender - 
-12. ns0_edits_ratio - ns15_edits_ratio
+12. ns0_edits_ratio - ns15_edits_ratio - DONE
 13. page_edits_entropy
 14. page_edits_total
 15. edit_type_a - edit_type_m - DONE
