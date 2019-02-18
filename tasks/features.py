@@ -553,6 +553,78 @@ class NameSpacesFeature(FeatureTask):
 
         return pd.DataFrame(data=data, columns=cols)
 
+
+class TotalEditedPages(FeatureTask):
+    def cache_name(self):
+        return 'total_edited_pages'
+
+    def on_requires(self):
+        return [CollectRevisions(data_dir=self.data_dir)]
+
+    @staticmethod
+    def aggregate(collection, user_name):
+        total_edits = None
+        agg_result = collection.aggregate([
+            {
+                '$match': {'user_name': user_name, 'page_ns': 0}
+            },
+            {
+                '$group': {'_id': 'null',
+                           'total_edits': {'$sum': 1}}
+            },
+            {
+                '$project': {'_id': 0}
+            }])
+
+        if agg_result is not None:
+            for dic in agg_result:
+                total_edits = dic['total_edits']
+                break
+
+        return total_edits
+
+    def on_process(self, data_frames):
+        host = config.get('MONGO', 'host')
+        port = config.get_int('MONGO', 'port')
+        database = config.get('MONGO', 'database')
+        collection = config.get('MONGO', 'collection')
+
+        revs_df = data_frames[0]
+
+        data = []
+        columns = ['user_name', 'total_edited_pages']
+        if isinstance(revs_df, pd.DataFrame):
+            user_names = revs_df['user_name'].unique()
+
+            with pymongo.MongoClient(host=host, port=port) as client:
+                db = client.get_database(database)
+                collection = db.get_collection(collection)
+
+                for user_name in user_names:
+                    if is_bot(user_name):
+                        continue
+
+                    total_edited_pages = self.aggregate(collection=collection, user_name=user_name)
+
+                    if total_edited_pages is None:
+                        continue
+
+                    data.append([user_name, total_edited_pages])
+                    logging.debug('Username: {}\tTotal edited pages: {}'.format(user_name, total_edited_pages))
+
+        df = pd.DataFrame(data=data, columns=columns)
+        # normalization_factor = df['total_edited_pages'].max()
+        # df['total_edited_pages'] = df['total_edited_pages'].apply(lambda x: float(x) / normalization_factor)
+
+        data = []
+        cols = ['page_id', 'user_name', 'total_edited_pages']
+        df = revs_df.merge(df, how='left', on='user_name')[cols]
+        for (page_id, user_name), group in df.groupby(by=['page_id', 'user_name']):
+            data.append([page_id, user_name, group.iloc[0]['total_edited_pages']])
+
+        return pd.DataFrame(data=data, columns=cols)
+
+
 # endregion
 
 
@@ -570,7 +642,8 @@ class MergeFeatures(FeatureTask):
                 EditSizeFeature(data_dir=self.data_dir),
                 EditTypesFeature(data_dir=self.data_dir),
                 TenureFeature(data_dir=self.data_dir),
-                NameSpacesFeature(data_dir=self.data_dir)]
+                NameSpacesFeature(data_dir=self.data_dir),
+                TotalEditedPages(data_dir=self.data_dir)]
 
     @staticmethod
     def merge(x, y):
