@@ -1,67 +1,65 @@
 import os
 import luigi
+import pymongo
 import pandas as pd
-from tasks.revision import CollectRevisions
+from wikitools import wiki, api
+from utils.num_utils import parse_int
+from utils.str_utils import parse_string
 
 
-class CalculatePageFirstEditDate(luigi.Task):
-    file_name = 'page_first_edit_date.h5'
+class CollectPages(luigi.Task):
+    file_name = 'pages.h5'
     data_dir = luigi.Parameter(default=r'D:\data\sme')
 
     def output(self):
         return luigi.LocalTarget(path=os.path.join(self.data_dir, self.file_name), format='h5')
 
-    def requires(self):
-        return [CollectRevisions(data_dir=self.data_dir)]
-
     def run(self):
-        revs_df = pd.read_hdf(self.input()[0].path, mode='r')
-        if isinstance(revs_df, pd.DataFrame):
-            grouped = revs_df.groupby(by='page_id')
+        with pymongo.MongoClient(host="localhost", port=27017) as client:
+            db = client.get_database(name='enwiki')
+            revs = db.get_collection(name='revs')
+            pages = db.get_collection(name='pages')
             data = []
-            for page_id, group in grouped:
-                data.append([page_id, group['timestamp'].min()])
-            df = pd.DataFrame(data=data, columns=['page_id', 'first_edit_date'])
-            df.to_hdf(os.path.join(self.data_dir, self.file_name), key='df', mode='w')
+            columns = ['page_id', 'page_title']
+            for rev in revs.find({}, {'_id': 1}):
+                page = pages.find_one({'_id': rev['_id']}, {'_id': 1, 'title': 1})
+                if page is None:
+                    page_id = parse_int(rev['_id'])
+                    page_title = ''
+                else:
+                    page_id = parse_int(page['_id'])
+                    page_title = parse_string(page['title'])
+                data.append([page_id, page_title])
+
+            pages_df = pd.DataFrame(data=data, columns=columns)
+            pages_df.to_hdf(os.path.join(self.data_dir, self.file_name), key='df', mode='w')
 
 
-class CalculatePageLastEditDate(luigi.Task):
-    file_name = 'page_last_edit_date.h5'
+class CollectTalkPages(luigi.Task):
+    file_name = 'talk_pages.h5'
     data_dir = luigi.Parameter(default=r'D:\data\sme')
 
     def output(self):
-        return luigi.LocalTarget(path=os.path.join(self.data_dir, self.file_name), format='h5')
+        return luigi.LocalTarget(path=os.path.join(self.data_dir, self.file_name))
 
     def requires(self):
-        return [CollectRevisions(data_dir=self.data_dir)]
+        return [CollectPages(data_dir=self.data_dir)]
 
     def run(self):
-        revs_df = pd.read_hdf(self.input()[0].path, mode='r')
-        if isinstance(revs_df, pd.DataFrame):
-            grouped = revs_df.groupby(by='page_id')
+        site = wiki.Wiki("https://en.wikipedia.org/w/api.php")
+        pages_df = pd.read_hdf(self.input()[0].path, mode='r')
+        if isinstance(pages_df, pd.DataFrame):
             data = []
-            for page_id, group in grouped:
-                data.append([page_id, group['timestamp'].max()])
-            df = pd.DataFrame(data=data, columns=['page_id', 'last_edit_date'])
-            df.to_hdf(os.path.join(self.data_dir, self.file_name), key='df', mode='w')
+            page_ids = pages_df['page_id'].unique()
+            for page_id in page_ids:
+                params = {'action': 'query', 'prop': 'info', 'inprop': 'talkid', 'pageids': page_id}
+                info_response = api.APIRequest(site, params).query(querycontinue=False)
+                page_info = info_response['query']['pages']['{}'.format(page_id)]
+                if 'missing' in page_info or 'talkid' not in page_info:
+                    continue
+                else:
+                    talk_page_id = parse_int(page_info['talkid'])
+                    data.append([page_id, talk_page_id])
 
-
-class CalculatePageTotalEdits(luigi.Task):
-    file_name = 'page_total_edits.h5'
-    data_dir = luigi.Parameter(default=r'D:\data\sme')
-
-    def output(self):
-        return luigi.LocalTarget(path=os.path.join(self.data_dir, self.file_name), format='h5')
-
-    def requires(self):
-        return [CollectRevisions(data_dir=self.data_dir)]
-
-    def run(self):
-        revs_df = pd.read_hdf(self.input()[0].path, mode='r')
-        if isinstance(revs_df, pd.DataFrame):
-            grouped = revs_df.groupby(by='page_id')
-            data = []
-            for page_id, group in grouped:
-                data.append([page_id, len(group)])
-            df = pd.DataFrame(data=data, columns=['page_id', 'total_edits'])
+            df = pd.DataFrame(data=data, columns=['page_id', 'talk_page_id'])
             df.to_hdf(os.path.join(self.data_dir, self.file_name), key='df', mode='w')

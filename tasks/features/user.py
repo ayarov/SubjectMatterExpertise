@@ -5,7 +5,7 @@ import pandas as pd
 from datetime import datetime
 from config import Configuration
 from utils.bot_utils import is_bot
-from tasks.revision import CollectRevisions
+from tasks.collections.revision import CollectRevisions
 from tasks.features.base import FeatureTask
 
 

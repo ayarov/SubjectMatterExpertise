@@ -5,8 +5,8 @@ import pandas as pd
 from base import FeatureTask
 from config import Configuration
 from utils.bot_utils import is_bot
-from tasks.revision import CollectRevisions
-from tasks.collections.page import CalculatePageTotalEdits
+from tasks.collections.revision import CollectRevisions
+from tasks.calculations.page import CalculatePageTotalEdits
 
 
 config = Configuration()

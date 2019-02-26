@@ -1,7 +1,7 @@
 import os
 import luigi
 import pandas as pd
-from tasks.revision import CollectTalkRevisions
+from tasks.collections.revision import CollectTalkRevisions
 
 
 class CalculateTalkPageTotalEdits(luigi.Task):
