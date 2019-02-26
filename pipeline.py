@@ -1,6 +1,6 @@
 import luigi
 
-from tasks.features import MergeFeatures
+from tasks.features.merge import MergeFeatures
 
 
 if __name__ == '__main__':

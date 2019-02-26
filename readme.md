@@ -29,7 +29,7 @@ MergeFeatures
 10. tenure - DONE
 11. gender - 
 12. ns0_edits_ratio - ns15_edits_ratio - DONE
-13. page_edits_entropy
+13. page_edit_dist
 14. total_edited_pages - DONE
 15. edit_type_a - edit_type_m - DONE
 16. links_overlap

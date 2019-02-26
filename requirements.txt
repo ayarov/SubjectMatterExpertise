@@ -1,6 +1,7 @@
 pytz
 luigi
 numpy
+scipy
 pandas
 h5py
 pymongo
