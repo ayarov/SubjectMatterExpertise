@@ -20,6 +20,9 @@ from tasks.features.edit import EditFrequencyFeature
 from tasks.features.edit import PageEditsEntropyFeature
 
 from tasks.features.user import TenureFeature
+from tasks.features.user import GenderFeature
+
+from tasks.features.persistence import PersistenceFeature
 
 
 config = Configuration()
@@ -44,9 +47,11 @@ class MergeFeatures(FeatureTask):
                 EditSizeFeature(data_dir=self.data_dir),
                 EditTypesFeature(data_dir=self.data_dir),
                 TenureFeature(data_dir=self.data_dir),
+                GenderFeature(data_dir=self.data_dir),
                 NameSpacesFeature(data_dir=self.data_dir),
                 TotalEditedPagesFeature(data_dir=self.data_dir),
-                PageEditsEntropyFeature(data_dir=self.data_dir)]
+                PageEditsEntropyFeature(data_dir=self.data_dir),
+                PersistenceFeature(data_dir=self.data_dir)]
 
     @staticmethod
     def merge(x, y):

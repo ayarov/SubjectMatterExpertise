@@ -6,7 +6,7 @@ from tasks.collections.revision import CollectRevisions
 
 class CalculatePageFirstEditDate(luigi.Task):
     file_name = 'page_first_edit_date.h5'
-    data_dir = luigi.Parameter(default=r'D:\data\sme')
+    data_dir = luigi.Parameter(default=r'../../data/sme')
 
     def output(self):
         return luigi.LocalTarget(path=os.path.join(self.data_dir, self.file_name), format='h5')

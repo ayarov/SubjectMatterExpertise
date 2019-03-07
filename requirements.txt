@@ -1,3 +1,4 @@
+nltk
 pytz
 luigi
 numpy
@@ -7,3 +8,4 @@ h5py
 pymongo
 python-dateutil
 mwclient
+tables

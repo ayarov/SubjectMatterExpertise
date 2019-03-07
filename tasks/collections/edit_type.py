@@ -5,7 +5,7 @@ import pandas as pd
 
 class CollectEditTypes(luigi.Task):
     file_name = 'revisions_with_edit_types.h5'
-    data_dir = luigi.Parameter(default=r'D:\data\sme')
+    data_dir = luigi.Parameter(default=r'../../data/sme')
 
     def output(self):
         return luigi.LocalTarget(path=os.path.join(self.data_dir, self.file_name))

@@ -6,7 +6,7 @@ import pandas as pd
 class FeatureTask(luigi.Task):
     __cache_format = 'h5'
     __cache_name = 'feature.h5'
-    data_dir = luigi.Parameter(default=r'D:\data\sme')
+    data_dir = luigi.Parameter(default=r'../../data/sme')
 
     def cache_name(self):
         return self.__cache_name

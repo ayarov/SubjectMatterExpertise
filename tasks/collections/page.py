@@ -2,14 +2,14 @@ import os
 import luigi
 import pymongo
 import pandas as pd
-from wikitools import wiki, api
+# from wikitools import wiki, api
 from utils.num_utils import parse_int
 from utils.str_utils import parse_string
 
 
 class CollectPages(luigi.Task):
     file_name = 'pages.h5'
-    data_dir = luigi.Parameter(default=r'D:\data\sme')
+    data_dir = luigi.Parameter(default=r'../../data/sme')
 
     def output(self):
         return luigi.LocalTarget(path=os.path.join(self.data_dir, self.file_name), format='h5')

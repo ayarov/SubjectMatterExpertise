@@ -1,15 +1,12 @@
 import os
-import csv
+import pandas as pd
 
 
 def load_bots():
-    bots = {}
-    with open(os.path.join('resources', 'bots.csv'), 'rb') as csv_file:
-        bot_reader = csv.reader(csv_file, delimiter=',', quotechar='|')
-        for row in bot_reader:
-            bots[row[1]] = True
-        csv_file.close()
-    return bots
+    # bots = {}
+    df = pd.read_csv(filepath_or_buffer=os.path.join(os.getcwd(), 'resources', 'bots.csv'), header=None)
+    df.rename(columns={1: 'bot_name'}, inplace=True)
+    return list(df['bot_name'])
 
 
 bot_users = load_bots()

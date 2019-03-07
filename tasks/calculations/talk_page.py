@@ -6,7 +6,7 @@ from tasks.collections.revision import CollectTalkRevisions
 
 class CalculateTalkPageTotalEdits(luigi.Task):
     file_name = 'talk_page_total_edits.h5'
-    data_dir = luigi.Parameter(default=r'D:\data\sme')
+    data_dir = luigi.Parameter(default=r'../../data/sme')
 
     def output(self):
         return luigi.LocalTarget(path=os.path.join(self.data_dir, self.file_name), format='h5')

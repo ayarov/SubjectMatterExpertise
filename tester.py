@@ -1,27 +1,17 @@
 # import pandas as pd
+# from os import walk
+# import os
 #
-# df = pd.read_hdf(path_or_buf=r'D:\data\sme\page_edit_entropy.h5')
-# print(df.head())
+# mypath = r'../../data/sme/csv'
 #
-#
-#
-#
-#
+# f = []
+# for (dirpath, dirnames, filenames) in walk(mypath):
+#     for filename in filenames:
+#         if str(filename).endswith('.csv'):
+#             df = pd.read_csv(os.path.join(dirpath, filename))
+#             # df = pd.read_hdf(os.path.join(dirpath, filename))
+#             if isinstance(df, pd.DataFrame):
+#                 df.to_hdf(path_or_buf=os.path.join(dirpath, str(filename).replace('.csv', '.h5')), key='df', mode='w')
 
-import mwclient
-site = mwclient.Site('en.wikipedia.org')
-
-
-def get_gender(users):
-    result = {}
-    users = site.users(users=users, prop=['gender'])
-    for user in users:
-        name = user['name']
-        if 'missing' in user:
-            result[name] = 'unknown'
-        else:
-            gender = user['gender']
-            result[name] = gender
-    return result
-
-print(get_gender(users=['NRuiz', 'Deacon Vorbis', 'Rick Norwood']))
+from nltk import downloader
+downloader.download()

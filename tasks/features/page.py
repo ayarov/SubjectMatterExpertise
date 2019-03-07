@@ -2,7 +2,7 @@ import pymongo
 import logging
 import numpy as np
 import pandas as pd
-from base import FeatureTask
+from .base import FeatureTask
 from config import Configuration
 from utils.bot_utils import is_bot
 from tasks.collections.revision import CollectRevisions

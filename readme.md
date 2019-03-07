@@ -27,19 +27,19 @@ MergeFeatures
 8. median_edit_size - DONE
 9. mean_edit_size - DONE
 10. tenure - DONE
-11. gender - 
+11. gender - DONE
 12. ns0_edits_ratio - ns15_edits_ratio - DONE
-13. page_edit_dist
+13. page_edit_dist - DONE
 14. total_edited_pages - DONE
 15. edit_type_a - edit_type_m - DONE
 16. links_overlap
 17. categories_overlap
 18. title_similarity
 19. summary_similarity
-20. mean_word_survival
-21. median_word_survival
-22. total_meaningful_words
-23. total_stop_words
+20. mean_word_survival - DONE
+21. median_word_survival - DONE
+22. total_meaningful_words - DONE
+23. total_stop_words - DONE
 24. contribution_relevancy
 
 **TODO**
