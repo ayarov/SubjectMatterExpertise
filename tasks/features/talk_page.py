@@ -1,7 +1,7 @@
 import pandas as pd
 from tasks.features.base import FeatureTask
-from tasks.collections.revision import CollectTalkRevisions
-from tasks.calculations.talk_page import CalculateTalkPageTotalEdits
+from tasks.collectors.revision import CollectTalkRevisions
+from tasks.calculators.talk_page import CalculateTalkPageTotalEdits
 
 
 class UserTalkPageEditsFeature(FeatureTask):

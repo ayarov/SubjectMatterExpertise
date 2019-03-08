@@ -5,11 +5,11 @@ import pandas as pd
 from scipy.stats import entropy
 from config import Configuration
 from utils.bot_utils import is_bot
-from tasks.collections.edit_type import CollectEditTypes
+from tasks.collectors.edit_type import CollectEditTypes
 from utils.date_utils import parse_timestamp
-from tasks.collections.revision import CollectRevisions
+from tasks.collectors.revision import CollectRevisions
 from tasks.features.base import FeatureTask
-from tasks.calculations.page import CalculatePageFirstEditDate, CalculatePageLastEditDate
+from tasks.calculators.page import CalculatePageFirstEditDate, CalculatePageLastEditDate
 
 
 config = Configuration()

@@ -7,7 +7,7 @@ from utils.bot_utils import is_bot
 from utils.num_utils import parse_int
 from utils.str_utils import parse_string
 from utils.date_utils import parse_timestamp
-from tasks.collections.page import CollectPages, CollectTalkPages
+from tasks.collectors.page import CollectPages, CollectTalkPages
 
 
 class CollectRevisions(luigi.Task):

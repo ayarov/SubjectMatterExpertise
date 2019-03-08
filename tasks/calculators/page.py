@@ -1,7 +1,7 @@
 import os
 import luigi
 import pandas as pd
-from tasks.collections.revision import CollectRevisions
+from tasks.collectors.revision import CollectRevisions
 
 
 class CalculatePageFirstEditDate(luigi.Task):

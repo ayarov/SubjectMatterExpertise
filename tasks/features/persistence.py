@@ -7,7 +7,7 @@ from utils.nlp_utils import stop_words
 from config import Configuration
 from .base import FeatureTask
 from utils.nlp_utils import WordParser
-from tasks.collections.revision import CollectRevisions
+from tasks.collectors.revision import CollectRevisions
 
 
 config = Configuration()
