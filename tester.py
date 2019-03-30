@@ -13,5 +13,11 @@
 #             if isinstance(df, pd.DataFrame):
 #                 df.to_hdf(path_or_buf=os.path.join(dirpath, str(filename).replace('.csv', '.h5')), key='df', mode='w')
 
-from nltk import downloader
-downloader.download()
+# from nltk import downloader
+# downloader.download()
+
+import sys
+import base64
+
+my_bytes = base64.b64encode(bytes('Anarchism', encoding='utf-8'))
+print(my_bytes)
