@@ -46,6 +46,7 @@ class SubjectSimilarityFeature(FeatureTask):
                 if is_bot(user_name):
                     continue
 
+                # logging.info(f'Page ID: {page_id}\tUsername: {user_name}')
                 top10_page_ids = list(top10_pages_df[top10_pages_df['user_name'] == user_name]['page_id'])
                 top10_page_ids = list(filter(lambda x: x != page_id, top10_page_ids))
 
