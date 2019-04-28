@@ -9,6 +9,8 @@ from tasks.features.page import NameSpacesFeature
 from tasks.features.page import UserPageEditsFeature
 from tasks.features.page import TotalEditedPagesFeature
 from tasks.features.page import UserPageEditsRatioFeature
+from tasks.features.page import PageCategoriesOverlap
+from tasks.features.page import PageLinksOverlap
 
 from tasks.features.talk_page import UserTalkPageEditsFeature
 from tasks.features.talk_page import UserTalkPageEditsRatioFeature
@@ -54,7 +56,9 @@ class MergeFeatures(FeatureTask):
                 TotalEditedPagesFeature(data_dir=self.data_dir),
                 PageEditsEntropyFeature(data_dir=self.data_dir),
                 PersistenceFeature(data_dir=self.data_dir),
-                SubjectSimilarityFeature(data_dir=self.data_dir)]
+                SubjectSimilarityFeature(data_dir=self.data_dir),
+                PageCategoriesOverlap(data_dir=self.data_dir),
+                PageLinksOverlap(data_dir=self.data_dir)]
 
     @staticmethod
     def merge(x, y):

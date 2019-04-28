@@ -5,6 +5,7 @@ import pandas as pd
 from .base import FeatureTask
 from config import Configuration
 from utils.bot_utils import is_bot
+from tasks.collectors.user import CollectTop10UserPages
 from tasks.collectors.revision import CollectRevisions
 from tasks.calculators.page import CalculatePageTotalEdits
 
@@ -187,3 +188,116 @@ class TotalEditedPagesFeature(FeatureTask):
             data.append([page_id, user_name, group.iloc[0]['total_edited_pages']])
 
         return pd.DataFrame(data=data, columns=cols)
+
+
+class PageCategoriesOverlap(FeatureTask):
+    def cache_name(self):
+        return 'page_category_overlap'
+
+    def on_requires(self):
+        return [CollectRevisions(self.data_dir),
+                CollectTop10UserPages(self.data_dir)]
+
+    @staticmethod
+    def aggregate(collection, user_name):
+        pass
+
+    def on_process(self, data_frames):
+        revs_df = data_frames[0]
+        assert isinstance(revs_df, pd.DataFrame)
+        top10_pages_df = data_frames[1]
+        assert isinstance(top10_pages_df, pd.DataFrame)
+
+        data = []
+        columns = ['page_id', 'user_name', 'categories_overlap']
+        with pymongo.MongoClient(host=config.get('MONGO', 'host'), port=config.get_int('MONGO', 'port')) as client:
+            db = client.get_database(config.get('MONGO', 'database'))
+            collection = db.get_collection('page_categories')
+
+            grouped = revs_df.groupby(by=['page_id', 'user_name'])
+            for (page_id, user_name), group in grouped:
+                if is_bot(user_name):
+                    continue
+
+                cursor = collection.find(filter={'page_id': int(page_id)})
+                if cursor is None:
+                    continue
+
+                categories = [entry['category'] for entry in cursor]
+
+                top10_page_ids = list(top10_pages_df[top10_pages_df['user_name'] == user_name]['page_id'])
+                top10_page_ids = list(filter(lambda x: x != page_id, top10_page_ids))
+
+                categories_overlaps = []
+                for k_page_id in top10_page_ids:
+                    cursor = collection.find(filter={'page_id': int(k_page_id)})
+                    if cursor is None:
+                        continue
+
+                    k_categories = [entry['category'] for entry in cursor]
+
+                    categories_overlap = (float(len(set(categories).intersection(k_categories))) / len(set(categories).union(k_categories))) \
+                        if (len(categories) > 0 or len(k_categories)) > 0 else 0.0
+                    categories_overlaps.append(categories_overlap)
+
+                mean_categories_overlap = np.mean(categories_overlaps) if len(categories_overlaps) > 0 else 0.0
+                data.append([page_id, user_name, mean_categories_overlap])
+
+        return pd.DataFrame(data=data, columns=columns)
+
+
+class PageLinksOverlap(FeatureTask):
+    def cache_name(self):
+        return 'page_link_overlap'
+
+    def on_requires(self):
+        return [CollectRevisions(self.data_dir),
+                CollectTop10UserPages(self.data_dir)]
+
+    @staticmethod
+    def aggregate(collection, user_name):
+        pass
+
+    def on_process(self, data_frames):
+        revs_df = data_frames[0]
+        assert isinstance(revs_df, pd.DataFrame)
+        top10_pages_df = data_frames[1]
+        assert isinstance(top10_pages_df, pd.DataFrame)
+
+        data = []
+        columns = ['page_id', 'user_name', 'links_overlap']
+        with pymongo.MongoClient(host=config.get('MONGO', 'host'), port=config.get_int('MONGO', 'port')) as client:
+            db = client.get_database(config.get('MONGO', 'database'))
+            collection = db.get_collection('page_links')
+
+            grouped = revs_df.groupby(by=['page_id', 'user_name'])
+            for (page_id, user_name), group in grouped:
+                if is_bot(user_name):
+                    continue
+
+                cursor = collection.find(filter={'pl_from': int(page_id)})
+                if cursor is None:
+                    continue
+
+                links = [entry['pl_title'] for entry in cursor]
+
+                top10_page_ids = list(top10_pages_df[top10_pages_df['user_name'] == user_name]['page_id'])
+                top10_page_ids = list(filter(lambda x: x != page_id, top10_page_ids))
+
+                links_overlaps = []
+                for k_page_id in top10_page_ids:
+                    cursor = collection.find(filter={'pl_from': int(k_page_id)})
+                    if cursor is None:
+                        continue
+
+                    k_links = [entry['pl_title'] for entry in cursor]
+
+                    links_overlap = (float(len(set(links).intersection(k_links))) / len(
+                        set(links).union(k_links))) \
+                        if (len(links) > 0 or len(k_links)) > 0 else 0.0
+                    links_overlaps.append(links_overlap)
+
+                mean_links_overlap = np.mean(links_overlaps) if len(links_overlaps) > 0 else 0.0
+                data.append([page_id, user_name, mean_links_overlap])
+
+        return pd.DataFrame(data=data, columns=columns)
