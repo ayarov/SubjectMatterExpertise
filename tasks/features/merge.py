@@ -27,7 +27,7 @@ from tasks.features.user import GenderFeature
 from tasks.features.persistence import PersistenceFeature
 
 from tasks.features.contribution import SubjectSimilarityFeature
-
+from tasks.features.contribution import ContributionSimilarity
 
 config = Configuration()
 logging.basicConfig(filename='sme.log',
@@ -58,7 +58,8 @@ class MergeFeatures(FeatureTask):
                 PersistenceFeature(data_dir=self.data_dir),
                 SubjectSimilarityFeature(data_dir=self.data_dir),
                 PageCategoriesOverlap(data_dir=self.data_dir),
-                PageLinksOverlap(data_dir=self.data_dir)]
+                PageLinksOverlap(data_dir=self.data_dir),
+                ContributionSimilarity(data_dir=self.data_dir)]
 
     @staticmethod
     def merge(x, y):
