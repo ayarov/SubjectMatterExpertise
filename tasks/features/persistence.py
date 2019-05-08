@@ -86,7 +86,6 @@ class PersistenceFeature(FeatureTask):
                    'content_token_edit_count_avg',
                    'content_token_vs_stop_words',
                    'content_token_vs_token',
-                   'contribution_similarity',
                    'persistence_exists']
         revs_df = data_frames[0]
 
@@ -112,7 +111,6 @@ class PersistenceFeature(FeatureTask):
                     f_avg_content_tokens_per_edit = 0.0
                     f_content_token_vs_stop_words = 0.0
                     f_content_token_vs_token = 0.0
-                    f_contribution_similarity = 0.0
                     f_persistence_exists = True
 
                     if user_name not in user_persists:
@@ -160,7 +158,6 @@ class PersistenceFeature(FeatureTask):
                                  f_avg_content_tokens_per_edit,
                                  f_content_token_vs_stop_words,
                                  f_content_token_vs_token,
-                                 f_contribution_similarity,
                                  1 if f_persistence_exists else 0])
 
         return pd.DataFrame(data=data, columns=columns)
