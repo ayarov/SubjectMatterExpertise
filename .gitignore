@@ -2,3 +2,8 @@
 *.log
 queries.txt
 *__pycache__*
+
+/ACM-TSC/.ipynb_checkpoints/
+/ACM-TSC/data/
+/draft_data/
+/draft_notebooks/.ipynb_checkpoints/
